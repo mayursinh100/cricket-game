@@ -249,7 +249,7 @@ var ballMesh, batsmanGrp, bowlerGrp;
 var ballPos, ballVel;
 var ballMoving = false, ballPhase = 'idle';
 var ballBounced = false;
-var camAngle = 0.18, camDist = 26, camH = 11;
+var camAngle = 0.12, camDist = 22, camH = 14;
 var isDragging = false, lastMX = 0, lastMY = 0;
 var animFrame = 0;
 var bowlerRunT = 0, bowlerRunning = false;
@@ -260,8 +260,8 @@ var trailMeshes = [];
 
 function init() {
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0a1628);
-  scene.fog = new THREE.Fog(0x0a1628, 100, 200);
+  scene.background = new THREE.Color(0x87CEEB);
+  scene.fog = new THREE.Fog(0x87CEEB, 120, 250);
   clock = new THREE.Clock();
 
   renderer = new THREE.WebGLRenderer({canvas:document.getElementById('gameCanvas'),antialias:true});
@@ -292,7 +292,7 @@ function buildScene() {
 function buildSky() {
   var skyGeo = new THREE.SphereGeometry(180, 32, 16);
   var skyMat = new THREE.ShaderMaterial({
-    uniforms:{topColor:{value:new THREE.Color(0x0a1a3a)},bottomColor:{value:new THREE.Color(0x1a3a6a)}},
+    uniforms:{topColor:{value:new THREE.Color(0x4a90d9)},bottomColor:{value:new THREE.Color(0xa8d8f0)}},
     vertexShader:`varying vec3 vWorldPosition;void main(){vWorldPosition=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
     fragmentShader:`uniform vec3 topColor;uniform vec3 bottomColor;varying vec3 vWorldPosition;void main(){float h=normalize(vWorldPosition).y;gl_FragColor=vec4(mix(bottomColor,topColor,max(h,0.0)),1.0);}`,
     side:THREE.BackSide
@@ -306,10 +306,10 @@ function buildSky() {
 }
 
 function buildGround() {
-  var outfield = new THREE.Mesh(new THREE.CircleGeometry(82, 80), new THREE.MeshLambertMaterial({color:0x1a5c1a}));
+  var outfield = new THREE.Mesh(new THREE.CircleGeometry(82, 80), new THREE.MeshLambertMaterial({color:0x2d8c2d}));
   outfield.rotation.x = -Math.PI/2; outfield.receiveShadow = true; scene.add(outfield);
   for(var i=0;i<16;i++){
-    var stripe = new THREE.Mesh(new THREE.PlaneGeometry(10,164), new THREE.MeshLambertMaterial({color:i%2===0?0x1e6b1e:0x185218,transparent:true,opacity:0.6}));
+    var stripe = new THREE.Mesh(new THREE.PlaneGeometry(10,164), new THREE.MeshLambertMaterial({color:i%2===0?0x3a9a3a:0x2d8c2d,transparent:true,opacity:0.6}));
     stripe.rotation.x = -Math.PI/2; stripe.position.set(-75+i*10,0.01,0); scene.add(stripe);
   }
   addCircle(27.5,0x2a8a2a,0.02); addCircle(68,0xffffff,0.03);
@@ -318,7 +318,7 @@ function buildGround() {
 function addCircle(r,color,y){var pts=[];var segs=80;for(var i=0;i<=segs;i++){var a=(i/segs)*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(a)*r,y||0,Math.sin(a)*r));}var geo=new THREE.BufferGeometry().setFromPoints(pts);scene.add(new THREE.Line(geo,new THREE.LineBasicMaterial({color:color})));}
 
 function buildPitch() {
-  var pitch = new THREE.Mesh(new THREE.BoxGeometry(3.05,0.022,20.12), new THREE.MeshLambertMaterial({color:0xc8a96e}));
+  var pitch = new THREE.Mesh(new THREE.BoxGeometry(3.05,0.022,20.12), new THREE.MeshLambertMaterial({color:0xd4b87a}));
   pitch.receiveShadow = true; scene.add(pitch);
   var crMat = new THREE.MeshBasicMaterial({color:0xffffff});
   [8.5,-8.5,10.06,-10.06].forEach(function(z){var c=new THREE.Mesh(new THREE.BoxGeometry(3.6,0.024,0.07),crMat);c.position.set(0,0.012,z);scene.add(c);});
@@ -339,7 +339,7 @@ function buildBoundary() {
 }
 
 function buildStadium() {
-  var tierColors=[0x2a2a3a,0x222232,0x1a1a2a];
+  var tierColors=[0x3a3a4a,0x323242,0x2a2a3a];
   for(var tier=0;tier<3;tier++){
     var innerR=76+tier*18,outerR=innerR+16,h=8+tier*6,baseY=tier*7;
     var shape=new THREE.Shape();shape.absarc(0,0,outerR,0,Math.PI*2,false);
@@ -361,7 +361,8 @@ function buildStadium() {
     }
   }
   for(var i=0;i<12;i++){var a=(i/12)*Math.PI*2;var roof=new THREE.Mesh(new THREE.BoxGeometry(22,0.6,14),new THREE.MeshLambertMaterial({color:0x1a1a2a}));roof.position.set(Math.cos(a)*86,22,Math.sin(a)*86);roof.rotation.y=-a;scene.add(roof);}
-  var sb=new THREE.Mesh(new THREE.BoxGeometry(18,10,1.5),new THREE.MeshLambertMaterial({color:0x111122}));sb.position.set(0,16,92);scene.add(sb);
+  var sb=new THREE.Mesh(new THREE.BoxGeometry(20,11,1.5),new THREE.MeshPhongMaterial({color:0x0a0a1a,shininess:40,specular:0x444466}));sb.position.set(0,17,92);scene.add(sb);
+  var sbScreen=new THREE.Mesh(new THREE.PlaneGeometry(16,7),new THREE.MeshBasicMaterial({color:0x000011}));sbScreen.position.set(0,17,92.8);scene.add(sbScreen);
 }
 
 function buildFloodlights() {
@@ -369,17 +370,18 @@ function buildFloodlights() {
     var poleMat=new THREE.MeshLambertMaterial({color:0x888899});
     var pole=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.8,48,10),poleMat);pole.position.set(p[0],24,p[2]);pole.castShadow=true;scene.add(pole);
     var arm=new THREE.Mesh(new THREE.BoxGeometry(12,0.5,0.5),poleMat);arm.position.set(p[0],48,p[2]);scene.add(arm);
-    var spot=new THREE.SpotLight(0xfff8e8,0.55,120,Math.PI/3.8,0.6,1);spot.position.set(p[0],48,p[2]);spot.target.position.set(0,0,0);spot.castShadow=true;spot.shadow.mapSize.width=256;spot.shadow.mapSize.height=256;scene.add(spot);scene.add(spot.target);
+    var spot=new THREE.SpotLight(0xfff8e8,0.15,120,Math.PI/3.8,0.6,1);spot.position.set(p[0],48,p[2]);spot.target.position.set(0,0,0);spot.castShadow=true;spot.shadow.mapSize.width=256;spot.shadow.mapSize.height=256;scene.add(spot);scene.add(spot.target);
   });
 }
 
 function buildLights() {
-  scene.add(new THREE.AmbientLight(0x304060,0.8));
-  var fill=new THREE.DirectionalLight(0x8090b0,0.3);fill.position.set(-30,20,-30);scene.add(fill);
+  scene.add(new THREE.AmbientLight(0xffffff,0.6));
+  var sun=new THREE.DirectionalLight(0xfff5e0,1.2);sun.position.set(40,60,30);sun.castShadow=true;sun.shadow.mapSize.width=2048;sun.shadow.mapSize.height=2048;sun.shadow.camera.left=-80;sun.shadow.camera.right=80;sun.shadow.camera.top=80;sun.shadow.camera.bottom=-80;sun.shadow.camera.near=0.5;sun.shadow.camera.far=200;sun.shadow.bias=-0.0005;scene.add(sun);
+  var fill2=new THREE.DirectionalLight(0xb0d0ff,0.4);fill2.position.set(-30,20,-30);scene.add(fill2);
 }
 
 function buildBall() {
-  ballMesh = new THREE.Mesh(new THREE.SphereGeometry(0.038,20,16), new THREE.MeshPhongMaterial({color:0xcc2200,shininess:120,specular:0x883311}));
+  ballMesh = new THREE.Mesh(new THREE.SphereGeometry(0.038,20,16), new THREE.MeshPhongMaterial({color:0xff2a00,shininess:150,specular:0xaa4422}));
   ballMesh.castShadow=true;ballMesh.position.set(0,0.1,-9);scene.add(ballMesh);
   for(var t=0;t<12;t++){var trail=new THREE.Mesh(new THREE.SphereGeometry(0.03*(1-t/14),6,6),new THREE.MeshBasicMaterial({color:0xcc2200,transparent:true,opacity:0}));scene.add(trail);trailMeshes.push(trail);}
 }
@@ -391,8 +393,8 @@ function buildPlayers() {
 
 function buildCricketer(shirtCol,pantsCol,skinCol,isBat) {
   var g=new THREE.Group();
-  var shirt=new THREE.MeshLambertMaterial({color:shirtCol});var pants=new THREE.MeshLambertMaterial({color:pantsCol});var skin=new THREE.MeshLambertMaterial({color:skinCol});
-  var boots=new THREE.MeshLambertMaterial({color:0x222222});var white=new THREE.MeshLambertMaterial({color:0xffffff});var helmCol=new THREE.MeshLambertMaterial({color:shirtCol});
+  var shirt=new THREE.MeshPhongMaterial({color:shirtCol,shininess:30,specular:0x333333});var pants=new THREE.MeshPhongMaterial({color:pantsCol,shininess:20,specular:0x222222});var skin=new THREE.MeshPhongMaterial({color:skinCol,shininess:15,specular:0x111111});
+  var boots=new THREE.MeshPhongMaterial({color:0x222222,shininess:40});var white=new THREE.MeshPhongMaterial({color:0xffffff,shininess:30});var helmCol=new THREE.MeshPhongMaterial({color:shirtCol,shininess:60,specular:0x666666});
   [-0.12,0.12].forEach(function(x){var boot=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.1,0.28),boots);boot.position.set(x,-0.09,0.04);g.add(boot);});
   [-0.11,0.11].forEach(function(x){var leg=new THREE.Mesh(new THREE.CylinderGeometry(0.068,0.06,0.52,10),pants);leg.position.set(x,0.17,0);g.add(leg);var pad=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.42,0.1),white);pad.position.set(x,0.19,0.1);g.add(pad);});
   var hips=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.18,0.38,10),pants);hips.position.y=0.47;g.add(hips);
@@ -402,7 +404,7 @@ function buildCricketer(shirtCol,pantsCol,skinCol,isBat) {
   if(isBat){
     var batGrp=new THREE.Group();batGrp.name='bat';
     var handle=new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,0.3,8),new THREE.MeshLambertMaterial({color:0x8b6010}));handle.position.y=0.15;batGrp.add(handle);
-    var blade=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.52,0.03),new THREE.MeshLambertMaterial({color:0xd4a030}));blade.position.y=-0.12;batGrp.add(blade);
+    var blade=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.52,0.03),new THREE.MeshPhongMaterial({color:0xd4a030,shininess:50,specular:0x886622}));blade.position.y=-0.12;batGrp.add(blade);
     batGrp.position.set(0.32,0.78,0.1);batGrp.rotation.z=-0.2;g.add(batGrp);
   }
   return g;
